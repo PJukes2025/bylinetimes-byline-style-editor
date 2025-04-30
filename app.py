@@ -3,13 +3,13 @@ import re
 
 st.set_page_config(page_title="Byline Times Style Editor", layout="wide")
 
+# Full house style function with Batch 1 + Batch 2
 def apply_house_style(text):
     changes = []
     edited = text
 
-    # Define Byline Times house style rules
     rules = [
-        # Government and political institutions
+        # Batch 1 — Government and political institutions
         (r"\bPM\b", "Prime Minister"),
         (r"\bgovt\b", "Government"),
         (r"\bthe Conservative Government\b", "the Government"),
@@ -19,25 +19,17 @@ def apply_house_style(text):
         (r"\bthe English Government\b", "the UK Government"),
         (r"\bParole Board\b", "Parole Board for England and Wales"),
         (r"\bNHS England\b", "the NHS in England"),
-
-        # Committees and proper naming
         (r"\bPublic Accounts Committee\b", "the House of Commons’ Public Accounts Committee"),
         (r"\bDame Meg Hillier\b", "Labour MP Dame Meg Hillier"),
-        (r"\bthe Leveson Inquiry\b",
+        (r"\bthe Leveson Inquiry\b", 
          "the Leveson Inquiry – into the culture, practices and ethics of the press following the exposure of the phone-hacking scandal in 2011-12"),
-
-        # Parties
         (r"\bTories\b", "the Conservatives"),
         (r"\bTory\b", "Conservative"),
         (r"\bLabour party\b", "Labour Party"),
         (r"\bLib Dems\b", "the Liberal Democrats"),
         (r"\bGreens\b", "the Green Party"),
-
-        # Singular/plural fixes
         (r"\bThe Government are\b", "The Government is"),
         (r"\bThe NHS are\b", "The NHS is"),
-
-        # Number formatting (1–9 as words)
         (r"\b1\b", "one"),
         (r"\b2\b", "two"),
         (r"\b3\b", "three"),
@@ -47,17 +39,53 @@ def apply_house_style(text):
         (r"\b7\b", "seven"),
         (r"\b8\b", "eight"),
         (r"\b9\b", "nine"),
+
+        # Batch 2 — Dates and formatting
+        (r"\b(\d{1,2})(st|nd|rd|th) (January|February|March|April|May|June|July|August|September|October|November|December)", r"\1 \3"),
+        (r"\b(January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4}", lambda m: re.sub(r",", "", m.group())),
+        (r"\b\d{1,2}(am|pm)\b", lambda m: m.group().lower()),
+
+        # Percentages and fractions
+        (r"\b(\d+)\s?percent\b", r"\1%"),
+        (r"\bper cent\b", "%"),
+        (r"\bone half\b", "half"),
+        (r"\btwo thirds\b", "two-thirds"),
+        (r"\bthree quarters\b", "three-quarters"),
+
+        # Ages and money
+        (r"\b(\d+)-year old\b", r"\1-year-old"),
+        (r"\b(\d+) years old\b", r"\1 years old"),
+        (r"\b(\d{2}),\s?(who is|aged)\b", r"\1, aged"),
+        (r"\b£(\d+)m\b", r"£\1 million"),
+        (r"\b£(\d+)bn\b", r"£\1 billion"),
+        (r"\$(\d+)m\b", r"$\1 million"),
+
+        # Quotation cleanup
+        (r"[‘’“”]", '"'),
+
+        # UK English spelling
+        (r"\borganize\b", "organise"),
+        (r"\bprioritize\b", "prioritise"),
+        (r"\bcenter\b", "centre"),
+        (r"\bdefense\b", "defence"),
+        (r"\blicense\b", "licence"),
+        (r"\btraveling\b", "travelling")
     ]
 
     for pattern, replacement in rules:
-        if re.search(pattern, edited):
-            edited = re.sub(pattern, replacement, edited)
-            changes.append(f"Replaced '{pattern}' with '{replacement}'")
+        try:
+            if re.search(pattern, edited):
+                new_text = re.sub(pattern, replacement, edited)
+                if new_text != edited:
+                    changes.append(f"Replaced '{pattern}' with '{replacement}'")
+                    edited = new_text
+        except Exception as e:
+            changes.append(f"Error processing pattern '{pattern}': {str(e)}")
 
     return edited, changes
 
 # Streamlit UI
-st.title("Byline Times Style Editor – MVP")
+st.title("Byline Times Style Editor – Beta")
 
 text_input = st.text_area("Paste your article text below", height=300)
 
