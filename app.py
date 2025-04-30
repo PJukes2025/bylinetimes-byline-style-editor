@@ -3,13 +3,12 @@ import re
 
 st.set_page_config(page_title="Byline Times Style Editor", layout="wide")
 
-# Full house style function with Batch 1 + Batch 2
 def apply_house_style(text):
     changes = []
     edited = text
 
     rules = [
-        # Batch 1 — Government and political institutions
+        # Batch 1 – Titles, politics, parties
         (r"\bPM\b", "Prime Minister"),
         (r"\bgovt\b", "Government"),
         (r"\bthe Conservative Government\b", "the Government"),
@@ -19,7 +18,7 @@ def apply_house_style(text):
         (r"\bthe English Government\b", "the UK Government"),
         (r"\bParole Board\b", "Parole Board for England and Wales"),
         (r"\bNHS England\b", "the NHS in England"),
-        (r"\bPublic Accounts Committee\b", "the House of Commons’ Public Accounts Committee"),
+        (r"(?<!the )Public Accounts Committee", "the House of Commons’ Public Accounts Committee"),
         (r"\bDame Meg Hillier\b", "Labour MP Dame Meg Hillier"),
         (r"\bthe Leveson Inquiry\b", 
          "the Leveson Inquiry – into the culture, practices and ethics of the press following the exposure of the phone-hacking scandal in 2011-12"),
@@ -30,6 +29,8 @@ def apply_house_style(text):
         (r"\bGreens\b", "the Green Party"),
         (r"\bThe Government are\b", "The Government is"),
         (r"\bThe NHS are\b", "The NHS is"),
+
+        # Batch 2 – Numbers, dates, grammar
         (r"\b1\b", "one"),
         (r"\b2\b", "two"),
         (r"\b3\b", "three"),
@@ -39,20 +40,14 @@ def apply_house_style(text):
         (r"\b7\b", "seven"),
         (r"\b8\b", "eight"),
         (r"\b9\b", "nine"),
-
-        # Batch 2 — Dates and formatting
-        (r"\b(\d{1,2})(st|nd|rd|th) (January|February|March|April|May|June|July|August|September|October|November|December)", r"\1 \3"),
-        (r"\b(January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4}", lambda m: re.sub(r",", "", m.group())),
+        (r"\b(\d{1,2})(st|nd|rd|th) (January|February|March|...)", r"\1 \3"),
+        (r"\b(January|February|March|...)\s\d{1,2}, \d{4}", lambda m: m.group().replace(",", "")),
         (r"\b\d{1,2}(am|pm)\b", lambda m: m.group().lower()),
-
-        # Percentages and fractions
         (r"\b(\d+)\s?percent\b", r"\1%"),
         (r"\bper cent\b", "%"),
         (r"\bone half\b", "half"),
         (r"\btwo thirds\b", "two-thirds"),
         (r"\bthree quarters\b", "three-quarters"),
-
-        # Ages and money
         (r"\b(\d+)-year old\b", r"\1-year-old"),
         (r"\b(\d+) years old\b", r"\1 years old"),
         (r"\b(\d{2}),\s?(who is|aged)\b", r"\1, aged"),
@@ -60,10 +55,24 @@ def apply_house_style(text):
         (r"\b£(\d+)bn\b", r"£\1 billion"),
         (r"\$(\d+)m\b", r"$\1 million"),
 
-        # Quotation cleanup
-        (r"[‘’“”]", '"'),
+        # Batch 3 – Quotes, media, terminology
+        (r"‘", '"'),
+        (r"’", '"'),
+        (r"“", '"'),
+        (r"”", '"'),
+        (r"\bThe Sun\b", "*The Sun*"),
+        (r"\bThe Times\b", "*The Times*"),
+        (r"\bMailOnline\b", "*MailOnline*"),
+        (r"\bThe Guardian\b", "*The Guardian*"),
+        (r"\bThe Independent\b", "*The Independent*"),
+        (r"\bThe BBC\b", "*The BBC*"),
+        (r"\bPanorama\b", "*BBC’s Panorama*"),
+        (r"\bNewsnight\b", "*BBC Newsnight*"),
+        (r"\bstatutory instrument\b", "statutory instrument – a form of delegated legislation"),
+        (r"\bprerogative power\b", "prerogative power – a residual executive power held by the Crown"),
+        (r"\bearlier today\b", "today"),
 
-        # UK English spelling
+        # UK spelling (selected)
         (r"\borganize\b", "organise"),
         (r"\bprioritize\b", "prioritise"),
         (r"\bcenter\b", "centre"),
@@ -80,11 +89,11 @@ def apply_house_style(text):
                     changes.append(f"Replaced '{pattern}' with '{replacement}'")
                     edited = new_text
         except Exception as e:
-            changes.append(f"Error processing pattern '{pattern}': {str(e)}")
+            changes.append(f"Error processing '{pattern}': {str(e)}")
 
     return edited, changes
 
-# Streamlit UI
+# Streamlit app UI
 st.title("Byline Times Style Editor – Beta")
 
 text_input = st.text_area("Paste your article text below", height=300)
