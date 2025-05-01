@@ -9,7 +9,7 @@ def apply_house_style(text):
 
     rules = [
 
-        # --- Batch 1–2: Institutions, parties, numbers, dates ---
+        # --- Batch 1–2: Political, numbers, institutions ---
         (r"\bPM\b", "Prime Minister"),
         (r"\bgovt\b", "Government"),
         (r"\bthe Conservative Government\b", "the Government"),
@@ -20,15 +20,14 @@ def apply_house_style(text):
         (r"\bthe English Government\b", "the UK Government"),
         (r"\bParole Board\b", "Parole Board for England and Wales"),
         (r"\bNHS England\b", "the NHS in England"),
-        (r"\b(?<!\bthe\s)(Public Accounts Committee)\b", "the House of Commons’ Public Accounts Committee"),
-        (r"\bDame Meg Hillier\b", "Labour MP Dame Meg Hillier"),
+        (r"\b(Dame Meg Hillier)\b", "Labour MP Dame Meg Hillier"),
         (r"\bthe Leveson Inquiry\b", 
          "the Leveson Inquiry – into the culture, practices and ethics of the press following the exposure of the phone-hacking scandal in 2011-12"),
-        (r"\bthe Tories\b", "the Conservatives"),
-        (r"\bTories\b", "the Conservatives"),
-        (r"\bLib Dems\b", "the Liberal Democrats"),
+        (r"\bPublic Accounts Committee\b", "House of Commons’ Public Accounts Committee"),
+        (r"\bTories\b", "Conservatives"),
         (r"\bLabour party\b", "Labour Party"),
-        (r"\bGreens\b", "the Green Party"),
+        (r"\bLib Dems\b", "Liberal Democrats"),
+        (r"\bGreens\b", "Green Party"),
         (r"\bThe NHS are\b", "The NHS is"),
         (r"\b1\b", "one"), (r"\b2\b", "two"), (r"\b3\b", "three"),
         (r"\b4\b", "four"), (r"\b5\b", "five"), (r"\b6\b", "six"),
@@ -43,12 +42,10 @@ def apply_house_style(text):
         (r"\b£(\d+)m\b", r"£\1 million"),
         (r"\b£(\d+)bn\b", r"£\1 billion"),
         (r"\$(\d+)m\b", r"$\1 million"),
-        (r"\bMarch (\d{1,2})(st|nd|rd|th)?, (\d{4})", r"\1 March \3"),  # US → UK date format
-        (r"\bthe the\b", "the"),  # generic fallback
+        (r"\bMarch (\d{1,2})(st|nd|rd|th)?, (\d{4})", r"\1 March \3"),
 
-        # --- Batch 3: Quotation, media, explanation terms ---
-        (r"[‘’]", "'"),
-        (r"[“”]", '"'),
+        # --- Batch 3: Quotation, media, explanations ---
+        (r"[‘’]", "'"), (r"[“”]", '"'),
         (r"\bThe Sun\b", "*The Sun*"),
         (r"\bThe Guardian\b", "*The Guardian*"),
         (r"\bThe Times\b", "*The Times*"),
@@ -60,7 +57,7 @@ def apply_house_style(text):
         (r"\bstatutory instrument\b", "statutory instrument – a form of delegated legislation"),
         (r"\bprerogative power\b", "prerogative power – a residual executive power held by the Crown"),
 
-        # --- Batch 4: Tone, preferred usage ---
+        # --- Batch 4: Tone, editorial phrasing ---
         (r"\bespecially\b", "particularly"),
         (r"\bjust\b", "merely"),
         (r"\bneeded\b", "required"),
@@ -75,15 +72,7 @@ def apply_house_style(text):
         (r"\bcould well\b", "could"),
         (r"\bmight well\b", "might"),
 
-        # UK spelling
-        (r"\borganize\b", "organise"),
-        (r"\bprioritize\b", "prioritise"),
-        (r"\bcenter\b", "centre"),
-        (r"\bdefense\b", "defence"),
-        (r"\blicense\b", "licence"),
-        (r"\btraveling\b", "travelling"),
-
-        # --- Batch 5: Social affairs, courts, person-first ---
+        # --- Batch 5: Person-first, social affairs, courts ---
         (r"\baddicts\b", "users of drugs"),
         (r"\bdrug addicts\b", "users of drugs"),
         (r"\bjunkies\b", "users of drugs"),
@@ -103,6 +92,33 @@ def apply_house_style(text):
         (r"\bthe disabled\b", "disabled people"),
         (r"\bthe mentally ill\b", "people experiencing mental illness"),
         (r"\bservice users\b", "those receiving services"),
+
+        # --- Batch 6: Editorial voice and cliché removal ---
+        (r"\bslammed\b", "strongly criticised"),
+        (r"\bhit out at\b", "criticised"),
+        (r"\btorched\b", "criticised"),
+        (r"\blast\b", "criticised"),
+        (r"\bsparked outrage\b", "drew criticism"),
+        (r"\bbrand new\b", "new"),
+        (r"\bcontroversial\b", "widely debated"),
+        (r"\bshock\b", "unexpected"),
+        (r"\bshocking\b", "notable"),
+        (r"\bplunged into chaos\b", "faced major disruption"),
+        (r"\bin meltdown\b", "under severe strain"),
+        (r"\bstormed\b", "entered"),
+        (r"\bunder fire\b", "facing scrutiny"),
+        (r"\bin chaos\b", "in disarray"),
+
+        # UK spelling
+        (r"\borganize\b", "organise"),
+        (r"\bprioritize\b", "prioritise"),
+        (r"\bcenter\b", "centre"),
+        (r"\bdefense\b", "defence"),
+        (r"\blicense\b", "licence"),
+        (r"\btraveling\b", "travelling"),
+
+        # Final safety net for duplicate "the the"
+        (r"\bthe the\b", "the")
     ]
 
     for pattern, replacement in rules:
@@ -117,8 +133,8 @@ def apply_house_style(text):
 
     return edited, changes
 
-# --- Streamlit UI ---
-st.title("Byline Times Style Editor – Batch 5")
+# Streamlit UI
+st.title("Byline Times Style Editor – Batch 6")
 
 text_input = st.text_area("Paste your article text below", height=300)
 
