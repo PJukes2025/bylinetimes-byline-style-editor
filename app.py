@@ -4,9 +4,8 @@ from difflib import SequenceMatcher
 
 st.set_page_config(page_title="Byline Times Style Editor – Tracked", layout="wide")
 
-# ---------- HOUSE STYLE RULES (BATCHES 1–6) ----------
+# ---------- HOUSE STYLE RULES (BATCHES 1–6 + QUOTE + DATE FIXES) ----------
 house_style_rules = [
-    # Batch 1–2
     (r"\bPM\b", "Prime Minister"),
     (r"\bgovt\b", "Government"),
     (r"\bgovernment are\b", "Government is"),
@@ -15,27 +14,20 @@ house_style_rules = [
     (r"\bLib Dems\b", "Liberal Democrats"),
     (r"\bBrexiteers\b", "Brexiters"),
     (r"\baddicts\b", "users of drugs"),
-    (r"\bMarch (\d{1,2})(st|nd|rd|th)?, (\d{4})", r"\1 March \3"),
-    (r"\b1\b", "one"), (r"\b2\b", "two"), (r"\b3\b", "three"),
-
-    # Batch 3–4
+    (r"\bdefendant\b", "the person accused"),
+    (r"\bclaimant\b", "the person claiming benefits"),
     (r"\bjust\b", "merely"),
     (r"\bespecially\b", "particularly"),
     (r"\bOK\b", "okay"),
-    (r"[‘’]", "'"),
-    (r"[“”]", '"'),
     (r"\bcontroversial\b", "widely debated"),
     (r"\bshock\b", "unexpected"),
     (r"\bslammed\b", "strongly criticised"),
     (r"\bhit out at\b", "criticised"),
-
-    # Batch 5
-    (r"\bdefendant\b", "the person accused"),
-    (r"\bclaimant\b", "the person claiming benefits"),
-
-    # Batch 6
-    (r"\bshock\b", "unexpected"),
-    (r"\bcontroversial\b", "widely debated"),
+    # UK-style date fix
+    (r"\b(January|February|March|April|May|June|July|August|September|October|November|December) (\d{1,2}), (\d{4})", r"\2 \1 \3"),
+    # Quote normalisation
+    (r"[‘’]", "'"),
+    (r"[“”]", '"'),
     (r"\bthe the\b", "the"),
 ]
 
@@ -77,6 +69,8 @@ def diff_paragraphs(original, edited):
     return '\n\n'.join(result)
 
 def diff_line(a, b):
+    a = normalise_quotes(a)
+    b = normalise_quotes(b)
     matcher = SequenceMatcher(None, a, b)
     result = []
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
