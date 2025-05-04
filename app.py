@@ -5,7 +5,7 @@ import uuid
 
 st.set_page_config(page_title="Byline Times Style Editor", layout="wide")
 
-# ---------- RULESET DEFINITIONS ----------
+# ---------- RULESETS ----------
 batch_rules = {
     "Political Terminology": [
         (r"\bPM\b", "Prime Minister"),
@@ -54,100 +54,102 @@ batch_rules = {
         (r"\bslammed\b", "strongly criticised"),
         (r"\bhit out at\b", "criticised"),
         (r"\bthe the\b", "the"),
-    ]
+    ],
 }
-# ---------- NORMALISERS ----------
+# ---------- NORMALISE QUOTES ----------
 def normalise_quotes(text):
     return text.replace("‘", "'").replace("’", "'").replace("“", '"').replace("”", '"')
 
-# ---------- COMPILE RULES FROM TOGGLES ----------
+# ---------- COMPILE SELECTED RULES ----------
 def compile_rules(selected_batches):
     rules = []
     for batch in selected_batches:
         rules.extend(batch_rules.get(batch, []))
     return rules
 
-# ---------- APPLY RULES + TRACK CHANGES WITH IDs ----------
+# ---------- APPLY RULES AND CAPTURE EDITS ----------
 def apply_rules_with_tracking(text, rules):
     edited = normalise_quotes(text)
     edits = []
+    offset = 0
     for pattern, replacement in rules:
         for match in re.finditer(pattern, edited):
             start, end = match.span()
             original = edited[start:end]
-            if original != replacement:
-                edit_id = str(uuid.uuid4())
+            new_text = re.sub(pattern, replacement, original)
+            if original != new_text:
+                edit_id = str(uuid.uuid4())[:5]
                 edits.append({
                     "id": edit_id,
                     "start": start,
                     "end": end,
                     "original": original,
-                    "replacement": re.sub(pattern, replacement, original),
-                    "accepted": None
+                    "replacement": new_text,
+                    "accepted": True  # default to accepted
                 })
-    # Sort by position to avoid overlap issues
     edits.sort(key=lambda x: x["start"])
     return edited, edits
-    # ---------- DIFF VIEW WITH BUTTON CONTROLS ----------
-def diff_line_with_ui(a, b):
-    a = normalise_quotes(a)
-    b = normalise_quotes(b)
-    matcher = SequenceMatcher(None, a, b)
-    result = []
-    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
-        if tag == 'equal':
-            result.append(a[i1:i2])
-        elif tag == 'replace':
-            replacement = b[j1:j2]
-            original = a[i1:i2]
-            result.append(
-                f"~~{original}~~ **{replacement}**  "
-                f"{st.button(f'Accept “{replacement}”', key=f'accept_{i1}')}"
-                f"{st.button(f'Reject “{original}”', key=f'reject_{i1}')}"
-            )
-        elif tag == 'delete':
-            original = a[i1:i2]
-            result.append(
-                f"~~{original}~~ "
-                f"{st.button(f'Reject “{original}”', key=f'reject_{i1}')}"
-            )
-        elif tag == 'insert':
-            replacement = b[j1:j2]
-            result.append(
-                f"**{replacement}** "
-                f"{st.button(f'Accept “{replacement}”', key=f'accept_{j1}')}"
-            )
-    return ''.join(result)
+    # ---------- BUILD OUTPUT WITH ACCEPT/REJECT BUTTONS ----------
+def build_diff_output(original_text, edits):
+    output = []
+    cursor = 0
 
+    for edit in edits:
+        start, end = edit["start"], edit["end"]
+        output.append(original_text[cursor:start])
 
-    # ---------- STREAMLIT UI ----------
-st.title("Byline Times Style Editor – Interactive Review")
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if st.button(f'✅ Accept “{edit["replacement"]}”', key=f'accept_{edit["id"]}'):
+                edit["accepted"] = True
+        with col2:
+            if st.button(f'❌ Reject “{edit["original"]}”', key=f'reject_{edit["id"]}'):
+                edit["accepted"] = False
+
+        # Show result based on state
+        if edit["accepted"]:
+            output.append(f'~~{edit["original"]}~~ **{edit["replacement"]}**')
+        else:
+            output.append(edit["original"])
+
+        cursor = end
+
+    output.append(original_text[cursor:])
+    return ''.join(output)
+
+# ---------- STREAMLIT UI ----------
+st.title("Byline Times Style Editor – Final Version")
 
 text_input = st.text_area("Paste your article text below:", height=300)
 
-# Descriptive batch toggle checkboxes
+# Descriptive batch toggles
 st.markdown("### Enable Style Rule Categories:")
 active_batches = []
-for batch_name in batch_rules.keys():
-    if st.checkbox(batch_name, value=True):
-        active_batches.append(batch_name)
+for batch in batch_rules.keys():
+    if st.checkbox(batch, value=True):  # Default to ON
+        active_batches.append(batch)
 
-show_tracked = st.checkbox("Show tracked changes and Accept/Reject controls", value=True)
+show_tracked = st.checkbox("Show tracked changes with Accept/Reject", value=True)
 
-# Initialise session state
+# Initialise session
 if "edits" not in st.session_state:
     st.session_state.edits = []
+if "original" not in st.session_state:
+    st.session_state.original = ""
+if "styled" not in st.session_state:
+    st.session_state.styled = ""
 
 if st.button("Apply House Style"):
     if not text_input.strip():
-        st.warning("Please paste text first.")
+        st.warning("Please paste some text.")
     else:
         selected_rules = compile_rules(active_batches)
         styled_text, tracked_edits = apply_rules_with_tracking(text_input, selected_rules)
-        st.session_state.edits = tracked_edits
         st.session_state.original = text_input
         st.session_state.styled = styled_text
-        # ---------- OUTPUT VIEW ----------
+        st.session_state.edits = tracked_edits
+
+# ---------- RENDER OUTPUT ----------
 if st.session_state.get("edits"):
     st.markdown("### Edited Output")
 
@@ -155,7 +157,7 @@ if st.session_state.get("edits"):
         tracked_output = build_diff_output(st.session_state.original, st.session_state.edits)
         st.markdown(tracked_output, unsafe_allow_html=True)
     else:
-        # Reconstruct output from accept/reject decisions
+        # Generate clean output with only accepted edits
         clean_output = []
         cursor = 0
         for edit in st.session_state.edits:
@@ -173,7 +175,9 @@ if st.session_state.get("edits"):
         st.download_button("Download Final Text", clean_text, file_name="edited_output.txt")
 
     st.markdown("---")
-    st.markdown("✅ Accepted edits will be applied to final output. Rejected ones are skipped.")
+    st.info("✅ Accepted edits are applied to final output. Rejected edits are skipped.")
+
+
 
 
 
