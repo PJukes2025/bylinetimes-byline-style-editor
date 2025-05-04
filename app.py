@@ -102,22 +102,23 @@ def diff_line_with_ui(a, b):
             original = a[i1:i2]
             result.append(
                 f"~~{original}~~ **{replacement}**  "
-                f"{st.button(f'Accept \"{replacement}\"', key=f'accept_{i1}')}"
-                f"{st.button(f'Reject \"{original}\"', key=f'reject_{i1}')}"
+                f"{st.button(f'Accept “{replacement}”', key=f'accept_{i1}')}"
+                f"{st.button(f'Reject “{original}”', key=f'reject_{i1}')}"
             )
         elif tag == 'delete':
             original = a[i1:i2]
             result.append(
                 f"~~{original}~~ "
-                f"{st.button(f'Reject \"{original}\"', key=f'reject_{i1}')}"
+                f"{st.button(f'Reject “{original}”', key=f'reject_{i1}')}"
             )
         elif tag == 'insert':
             replacement = b[j1:j2]
             result.append(
                 f"**{replacement}** "
-                f"{st.button(f'Accept \"{replacement}\"', key=f'accept_{j1}')}"
+                f"{st.button(f'Accept “{replacement}”', key=f'accept_{j1}')}"
             )
     return ''.join(result)
+
 
     # ---------- STREAMLIT UI ----------
 st.title("Byline Times Style Editor – Interactive Review")
