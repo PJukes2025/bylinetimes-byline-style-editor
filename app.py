@@ -89,35 +89,36 @@ def apply_rules_with_tracking(text, rules):
     edits.sort(key=lambda x: x["start"])
     return edited, edits
     # ---------- DIFF VIEW WITH BUTTON CONTROLS ----------
-def build_diff_output(original_text, edits):
-    output = []
-    cursor = 0
+def diff_line_with_ui(a, b):
+    a = normalise_quotes(a)
+    b = normalise_quotes(b)
+    matcher = SequenceMatcher(None, a, b)
+    result = []
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == 'equal':
+            result.append(a[i1:i2])
+        elif tag == 'replace':
+            replacement = b[j1:j2]
+            original = a[i1:i2]
+            result.append(
+                f"~~{original}~~ **{replacement}**  "
+                f"{st.button(f'Accept \"{replacement}\"', key=f'accept_{i1}')}"
+                f"{st.button(f'Reject \"{original}\"', key=f'reject_{i1}')}"
+            )
+        elif tag == 'delete':
+            original = a[i1:i2]
+            result.append(
+                f"~~{original}~~ "
+                f"{st.button(f'Reject \"{original}\"', key=f'reject_{i1}')}"
+            )
+        elif tag == 'insert':
+            replacement = b[j1:j2]
+            result.append(
+                f"**{replacement}** "
+                f"{st.button(f'Accept \"{replacement}\"', key=f'accept_{j1}')}"
+            )
+    return ''.join(result)
 
-    for edit in edits:
-        if edit["accepted"] is None:
-            edit["accepted"] = True  # default to accepted initially
-
-        start, end = edit["start"], edit["end"]
-        output.append(original_text[cursor:start])
-
-        if edit["accepted"]:
-            output.append(f"~~{edit['original']}~~ **{edit['replacement']}**")
-        else:
-            output.append(f"{edit['original']}")
-
-        # Generate accept/reject UI
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            if st.button(f"Accept {edit['id']}", key=f"accept_{edit['id']}"):
-                edit["accepted"] = True
-        with col2:
-            if st.button(f"Reject {edit['id']}", key=f"reject_{edit['id']}"):
-                edit["accepted"] = False
-
-        cursor = end
-
-    output.append(original_text[cursor:])
-    return ''.join(output)
     # ---------- STREAMLIT UI ----------
 st.title("Byline Times Style Editor – Interactive Review")
 
