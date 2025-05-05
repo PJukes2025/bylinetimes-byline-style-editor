@@ -121,6 +121,44 @@ st.title("Byline Times Style Editor – UI Refined Version")
 
 text_input = st.text_area("Paste your article text below:", height=300)
 
+if st.button("Apply Batch 5 (Person-First Language) Only"):
+    rules = batch_rules["Person-First Language"]
+    styled_text, edits = apply_rules_with_tracking(text_input, rules)
+
+    final_output = []
+    cursor = 0
+
+    for i, edit in enumerate(edits):
+        start, end = edit["start"], edit["end"]
+        original = edit["original"]
+        replacement = edit["replacement"]
+        final_output.append(text_input[cursor:start])
+
+        st.markdown(f"**Suggested edit:** {original} → {replacement}")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button(f"✅ Accept “{replacement}”", key=f"accept_{i}"):
+                edit["accepted"] = True
+        with col2:
+            if st.button(f"✴️ Keep “{original}”", key=f"reject_{i}"):
+                edit["accepted"] = False
+
+        # Apply chosen version
+        if edit.get("accepted", True):
+            final_output.append(replacement)
+        else:
+            final_output.append(original)
+
+        cursor = end
+
+    final_output.append(text_input[cursor:])
+    clean_text = ''.join(final_output)
+
+    st.text_area("Edited Text (Batch 5 Only)", clean_text, height=300)
+    st.download_button("Download Edited Text", clean_text, file_name="batch5_output.txt")
+
+
 st.markdown("### Enable Style Rule Categories:")
 active_batches = []
 for batch in batch_rules.keys():
