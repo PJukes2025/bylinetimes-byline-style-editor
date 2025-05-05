@@ -67,11 +67,10 @@ def compile_rules(selected_batches):
         rules.extend(batch_rules.get(batch, []))
     return rules
 
-# ---------- APPLY RULES AND CAPTURE EDITS ----------
+# ---------- APPLY RULES AND TRACK EDITS ----------
 def apply_rules_with_tracking(text, rules):
     edited = normalise_quotes(text)
     edits = []
-    offset = 0
     for pattern, replacement in rules:
         for match in re.finditer(pattern, edited):
             start, end = match.span()
@@ -89,7 +88,7 @@ def apply_rules_with_tracking(text, rules):
                 })
     edits.sort(key=lambda x: x["start"])
     return edited, edits
-    # ---------- BUILD OUTPUT WITH ACCEPT/REJECT BUTTONS ----------
+    # ---------- BUILD DIFF OUTPUT WITH INLINE BUTTONS ----------
 def build_diff_output(original_text, edits):
     output = []
     cursor = 0
@@ -98,40 +97,39 @@ def build_diff_output(original_text, edits):
         start, end = edit["start"], edit["end"]
         output.append(original_text[cursor:start])
 
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            if st.button(f'✅ Accept “{edit["replacement"]}”', key=f'accept_{edit["id"]}'):
-                edit["accepted"] = True
-        with col2:
-            if st.button(f'❌ Reject “{edit["original"]}”', key=f'reject_{edit["id"]}'):
-                edit["accepted"] = False
-
-        # Show result based on state
+        # Show accepted or original text
         if edit["accepted"]:
-            output.append(f'~~{edit["original"]}~~ **{edit["replacement"]}**')
+            output.append(f'**{edit["replacement"]}**')
         else:
-            output.append(edit["original"])
+            output.append(f'{edit["original"]}')
+
+        # Inline Accept/Keep buttons
+        button_row = (
+            f'<div style="margin: 4px 0;">'
+            f'<button onclick="window.location.reload(false);" style="margin-right:8px;">✅ Accept “{edit["replacement"]}”</button>'
+            f'<button onclick="window.location.reload(false);">✴️ Keep “{edit["original"]}”</button>'
+            f'</div>'
+        )
+        st.markdown(button_row, unsafe_allow_html=True)
 
         cursor = end
 
     output.append(original_text[cursor:])
     return ''.join(output)
-
 # ---------- STREAMLIT UI ----------
-st.title("Byline Times Style Editor – Final Version")
+st.title("Byline Times Style Editor – UI Refined Version")
 
 text_input = st.text_area("Paste your article text below:", height=300)
 
-# Descriptive batch toggles
 st.markdown("### Enable Style Rule Categories:")
 active_batches = []
 for batch in batch_rules.keys():
     if st.checkbox(batch, value=True):  # Default to ON
         active_batches.append(batch)
 
-show_tracked = st.checkbox("Show tracked changes with Accept/Reject", value=True)
+show_tracked = st.checkbox("Show tracked changes with Accept/Keep", value=True)
 
-# Initialise session
+# Initialise session state
 if "edits" not in st.session_state:
     st.session_state.edits = []
 if "original" not in st.session_state:
@@ -149,7 +147,7 @@ if st.button("Apply House Style"):
         st.session_state.styled = styled_text
         st.session_state.edits = tracked_edits
 
-# ---------- RENDER OUTPUT ----------
+# ---------- OUTPUT RENDERING ----------
 if st.session_state.get("edits"):
     st.markdown("### Edited Output")
 
@@ -157,7 +155,7 @@ if st.session_state.get("edits"):
         tracked_output = build_diff_output(st.session_state.original, st.session_state.edits)
         st.markdown(tracked_output, unsafe_allow_html=True)
     else:
-        # Generate clean output with only accepted edits
+        # Generate clean output using accepted edits
         clean_output = []
         cursor = 0
         for edit in st.session_state.edits:
@@ -174,11 +172,5 @@ if st.session_state.get("edits"):
         st.text_area("Final Clean Output", clean_text, height=300)
         st.download_button("Download Final Text", clean_text, file_name="edited_output.txt")
 
-    st.markdown("---")
-    st.info("✅ Accepted edits are applied to final output. Rejected edits are skipped.")
-
-
-
-
-
+    st.info("✅ Accept applies the edit. ✴️ Keep retains the original.")
 
