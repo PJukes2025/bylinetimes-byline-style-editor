@@ -91,6 +91,14 @@ batch_rules = {
         (r"\b(CNN International)\b", r"*\1*"),
         (r"\b(PBS America)\b", r"*\1*"),
         (r"\b(Al Jazeera English)\b", r"*\1*"),
+        (r"\b(?:[Tt]he )?(Guardian)\b", r"*\g<0>*"),
+        (r"\b(?:[Tt]he )?(Times)\b", r"*\g<0>*"),
+        (r"\b(?:[Tt]he )?(Sun)\b", r"*\g<0>*"),
+    ...
+]
+
+            
+            
     ]
 
 }
@@ -260,6 +268,10 @@ def run_grammar_checks(text):
         # Basic punctuation spacing
         if re.search(r'\w+\.\w+', line):
             issues.append((i+1, 'Possible missing space after full stop'))
+
+        # Passive voice detection (simple heuristic)
+        if re.search(r"\b(was|were|has been|have been|had been)\b\s+\w+ed\b", line):
+            issues.append((i+1, "Possible passive voice detected"))
 
     return issues
 
