@@ -213,7 +213,8 @@ if st.button("Apply House Style"):
         st.session_state.original = text_input
         st.session_state.styled = styled_text
         st.session_state.edits = tracked_edits
-        # ---------- FINAL OUTPUT ----------
+
+# ---------- FINAL OUTPUT ----------
 if st.session_state.get("edits"):
     st.markdown("### Edited Output")
 
@@ -262,5 +263,13 @@ def run_grammar_checks(text):
 
     return issues
 
-    st.info("✅ Accepted edits are applied. ✴️ Keep retains the original.")
+# ---------- GRAMMAR FEEDBACK ----------
+if st.session_state.get("styled"):
+    st.markdown("### Grammar & Spellcheck Feedback (UK English)")
 
+    grammar_issues = run_grammar_checks(st.session_state.styled)
+    if grammar_issues:
+        for line_no, issue in grammar_issues:
+            st.markdown(f"- Line {line_no}: {issue}")
+    else:
+        st.success("No grammar issues found.")
