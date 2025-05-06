@@ -93,11 +93,7 @@ batch_rules = {
         (r"\b(Al Jazeera English)\b", r"*\1*"),
         (r"\b(?:[Tt]he )?(Guardian)\b", r"*\g<0>*"),
         (r"\b(?:[Tt]he )?(Times)\b", r"*\g<0>*"),
-        (r"\b(?:[Tt]he )?(Sun)\b", r"*\g<0>*"),
-    ...
-]
-
-            
+        (r"\b(?:[Tt]he )?(Sun)\b", r"*\g<0>*")      
             
     ]
 
