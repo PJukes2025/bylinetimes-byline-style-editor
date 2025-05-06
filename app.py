@@ -126,6 +126,31 @@ def apply_rules_with_tracking(text, rules):
                 })
     edits.sort(key=lambda x: x["start"])
     return edited, edits
+    
+    # ---------- GRAMMAR & SPELLCHECK (UK) ----------
+def run_grammar_checks(text):
+    issues = []
+    lines = text.split('\n')
+    for i, line in enumerate(lines):
+        # Double words
+        matches = re.findall(r'\b(\w+)\s+\1\b', line, flags=re.IGNORECASE)
+        for match in matches:
+            issues.append((i+1, f'Doubled word: “{match} {match}”'))
+
+        # Subject-verb agreement (UK)
+        if "government are" in line:
+            issues.append((i+1, '“government are” → should be “Government is”'))
+
+        # Capitalisation: improper lowercase for known acronyms
+        if re.search(r'\bnato\b', line):
+            issues.append((i+1, '“nato” → should be “NATO”'))
+
+        # Basic punctuation spacing
+        if re.search(r'\w+\.\w+', line):
+            issues.append((i+1, 'Possible missing space after full stop'))
+
+    return issues
+
     # ---------- INLINE EDIT RENDERING WITH BUTTONS ----------
 def build_diff_output(original_text, edits):
     output = []
@@ -212,6 +237,30 @@ if st.session_state.get("edits"):
 
         st.text_area("Final Clean Output", clean_text, height=300)
         st.download_button("Download Final Text", clean_text, file_name="edited_output.txt")
+
+# ---------- GRAMMAR & SPELLCHECK (UK) ----------
+def run_grammar_checks(text):
+    issues = []
+    lines = text.split('\n')
+    for i, line in enumerate(lines):
+        # Double words
+        matches = re.findall(r'\b(\w+)\s+\1\b', line, flags=re.IGNORECASE)
+        for match in matches:
+            issues.append((i+1, f'Doubled word: “{match} {match}”'))
+
+        # Subject-verb agreement (UK)
+        if "government are" in line:
+            issues.append((i+1, '“government are” → should be “Government is”'))
+
+        # Capitalisation: improper lowercase for known acronyms
+        if re.search(r'\bnato\b', line):
+            issues.append((i+1, '“nato” → should be “NATO”'))
+
+        # Basic punctuation spacing
+        if re.search(r'\w+\.\w+', line):
+            issues.append((i+1, 'Possible missing space after full stop'))
+
+    return issues
 
     st.info("✅ Accepted edits are applied. ✴️ Keep retains the original.")
 
